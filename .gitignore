@@ -1,3 +1,13 @@
-*.tar.gz
+.DS_Store
+
+venv
+.idea
 .ipynb_checkpoints
 __pycache__
+
+data
+
+*.tar.gz
+eKoNLPy
+eKoNLPy-old
+mecab-*
