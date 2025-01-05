@@ -256,6 +256,18 @@ def test():
 
 
 if __name__ == "__main__":
-    # main('20230101')
-    test()
+    import argparse
 
+    # 오늘 날짜를 기본값으로 설정
+    default_date = dt.datetime.now().strftime("%Y%m%d")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("from_date",
+                        type=str,
+                        default=default_date,
+                        help=f"Date in YYYYMMDD format. Default is today ({default_date}).",
+                        nargs='?'
+                        )
+
+    args = parser.parse_args()
+    main(args.from_date)
