@@ -213,19 +213,6 @@ def preprocess_minutes(file_path):
     return doc, section_titles
 
 
-def main(from_date: str):
-
-    get_minutes_list(from_date=from_date, description_chk=False)
-
-    filepath = './data/minutes/'
-    hwp_filelist = os.listdir(filepath + 'hwp')
-    for hwp_filename in hwp_filelist:
-        target_filename = hwp_filename[:-4] + '.txt'
-        convert_cmd = f"hwp5txt --output {filepath + 'txt/' + target_filename} {filepath + 'hwp/' + hwp_filename}"
-        os.system(convert_cmd)
-        print(convert_cmd)
-
-
 def list_minute_files(path):
     path = os.path.join(path, 'txt')
     for i, file in enumerate(os.listdir(path)):
@@ -234,6 +221,19 @@ def list_minute_files(path):
         yield file_path
 
 
+def main(from_date: str):
+
+    # 1. 의사록 다운로드 (일자별로 다운로드 경로가 다르기 때문에 일자별로 케이스 구분
+    get_minutes_list(from_date=from_date, description_chk=False)
+
+    # 2. hwp 파일 txt 파일로 변환 & txt 파일을 열어서 의사록 파일 인지 확인 (별도 함수 작성 필요)
+    filepath = './data/minutes/'
+    hwp_filelist = os.listdir(filepath + 'hwp')
+    for hwp_filename in hwp_filelist:
+        target_filename = hwp_filename[:-4] + '.txt'
+        convert_cmd = f"hwp5txt --output {filepath + 'txt/' + target_filename} {filepath + 'hwp/' + hwp_filename}"
+        os.system(convert_cmd)
+        print(convert_cmd)
 
 
 def test():
