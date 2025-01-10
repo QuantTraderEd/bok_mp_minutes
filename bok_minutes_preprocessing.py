@@ -9,7 +9,7 @@ import requests
 import pandas as pd
 
 src_path = os.path.dirname(__file__)
-pjt_home_path = os.path.join(src_path, os.pardir)
+pjt_home_path = os.path.join(src_path)
 pjt_home_path = os.path.abspath(pjt_home_path)
 
 
