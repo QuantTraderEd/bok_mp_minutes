@@ -40,6 +40,7 @@ def calc_polarity(scores):
 
 def main():
     # step 1. minutes 데이터 로딩
+    logger.info("loading minutes data...")
     minutes_path = './data/minutes/'
     df_minutes_path = os.path.join(minutes_path, 'minutes.csv')
     df = pd.read_csv(df_minutes_path, encoding='utf-8', sep="|")
@@ -50,6 +51,7 @@ def main():
     df_texts = pd.read_csv(df_texts_path, index_col=None, encoding='utf-8', sep="|")
 
     # step 2. 문장별 감성 분석
+    logger.info("start sentence sentimental analysis...")
 
     # Korean Monetary Policy Dictionary (MPKO)
     mpko_mkt = MPKO(kind=0)
@@ -62,16 +64,26 @@ def main():
         tone_lex = mpko_lex.get_score(tokens)['Polarity']
         tokens = mpko_mkt.tokenize(sentence)
         tone_mkt = mpko_mkt.get_score(tokens)['Polarity']
-        score = (filename, mdate, rdate, section, sid, tone_mkt, tone_lex)
+        score = (filename, mdate, rdate, section, sid, sentence, tone_mkt, tone_lex)
         scores.append(score)
 
+        # msg = f"{mdate} {rdate} {sentence} {tone_mkt} {tone_lex}"
+        # logger.debug(msg)
+
+    logger.info("sentence sentimental analysis done!!")
+
     # step 3. 분석결과 파일 저장
-    df_score = pd.DataFrame(scores, columns=['filename', 'mdate', 'rdate', 'section', 'sid', 'tone_mkt', 'tone_lex'])
+    logger.info("grouping analytics result by daily and save analytics result...")
+    df_score = pd.DataFrame(scores, columns=['filename', 'mdate', 'rdate', 'section', 'sid', 'sentence', 'tone_mkt', 'tone_lex'])
+
+    df_score.to_csv(minutes_path + 'minutes_score.csv',encoding='utf-8', index=False, sep='|')
 
     key_cols = ['mdate']
     tone_cols = ['tone_mkt', 'tone_lex']
     df_result = df_score.groupby(key_cols)[tone_cols].agg(lambda x: calc_polarity(x)).reset_index()
     df_result.to_csv(df_tones_path, encoding='utf-8', index=False)
+
+    logger.info("END!!")
 
 
 if __name__ == "__main__":
