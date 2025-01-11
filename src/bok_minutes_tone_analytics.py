@@ -39,9 +39,13 @@ def calc_polarity(scores):
 
 
 def main():
+    """
+    BOK 금통위 의사록 sentimemt 분석 실행, 결과 저장 메인 함수
+
+    """
     # step 1. minutes 데이터 로딩
     logger.info("loading minutes data...")
-    minutes_path = './data/minutes/'
+    minutes_path = f'{pjt_home_path}/data/minutes/'
     df_minutes_path = os.path.join(minutes_path, 'minutes.csv')
     df = pd.read_csv(df_minutes_path, encoding='utf-8', sep="|")
 
@@ -81,7 +85,9 @@ def main():
     key_cols = ['mdate']
     tone_cols = ['tone_mkt', 'tone_lex']
     df_result = df_score.groupby(key_cols)[tone_cols].agg(lambda x: calc_polarity(x)).reset_index()
-    df_result.to_csv(df_tones_path, encoding='utf-8', index=False)
+    df_result.to_csv(df_tones_path, encoding='utf-8', index=False, sep='|')
+    logger.info(f"df_result=> \n{df_result.iloc[-12:].to_markdown()}")
+    logger.info("sentence sentimental analysis done!!")
 
     logger.info("END!!")
 
@@ -89,9 +95,9 @@ def main():
 if __name__ == "__main__":
     import argparse
 
-    # 오늘 날짜에서 30일전 날짜를 기본값으로 설정
+    # 오늘 날짜에서 365일전 날짜를 기본값으로 설정
     now_dt = dt.datetime.now()
-    default_date = (now_dt - dt.timedelta(days=30)).strftime("%Y%m%d")
+    default_date = (now_dt - dt.timedelta(days=365)).strftime("%Y%m%d")
 
     # parser = argparse.ArgumentParser()
     # parser.add_argument("from_date",
@@ -100,7 +106,11 @@ if __name__ == "__main__":
     #                     help=f"Date in YYYYMMDD format. Default is today ({default_date}).",
     #                     nargs='?'
     #                     )
+    # parser.add_argument("pwd",
+    #                     type=str,
+    #                     default="",
+    #                     nargs='?')
     #
     # args = parser.parse_args()
-    # main(args.from_date)
+    # main(args.pwd)
     main()
