@@ -27,7 +27,7 @@ jobs:
         python -m pip install -r requirements.txt
     - name: Run Main Scripts
       run: |
-        start_minutes.sh
+        ./start_minutes.sh
     - name: Send results
       run: |
         python src/bok_minutes_send_analytics.py ${{secrets.NVR_MAIL_PWD}}
