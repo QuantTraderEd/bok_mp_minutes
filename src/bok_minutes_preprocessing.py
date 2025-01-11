@@ -281,6 +281,7 @@ def list_minute_files(path):
     file_list.sort()
     for i, file in enumerate(file_list):
         file_path = os.path.join(path, file)
+        if not file.endswith('txt'): continue
         logger.info(f'--processing {i+1}th minutes: {file}')
         yield file_path
 
