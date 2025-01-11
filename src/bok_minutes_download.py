@@ -184,9 +184,9 @@ def main(from_date: str):
 if __name__ == "__main__":
     import argparse
 
-    # 오늘 날짜에서 30일전 날짜를 기본값으로 설정
+    # 오늘 날짜에서 62일전 날짜를 기본값으로 설정
     now_dt = dt.datetime.now()
-    default_date = (now_dt - dt.timedelta(days=30)).strftime("%Y%m%d")
+    default_date = (now_dt - dt.timedelta(days=62)).strftime("%Y%m%d")
 
     parser = argparse.ArgumentParser()
     parser.add_argument("from_date",
