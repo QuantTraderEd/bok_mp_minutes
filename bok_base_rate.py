@@ -1,5 +1,6 @@
 import os
 import sys
+import site
 import logging
 import platform
 
@@ -11,6 +12,10 @@ from bs4 import BeautifulSoup
 src_path = os.path.dirname(__file__)
 pjt_home_path = os.path.join(src_path)
 pjt_home_path = os.path.abspath(pjt_home_path)
+
+site.addsitedir(pjt_home_path)
+
+from dao.upsert_bok_base_rates import upsert_bok_base_rates
 
 
 logger = logging.getLogger(__file__)
@@ -63,6 +68,9 @@ def main():
     # 새로운 DataFrame: 날짜 컬럼과 데이터의 마지막 컬럼만 남김
     df_result = df[['date', 'base_rate']]
     logger.info('df_result=>\n' + df_result.iloc[:5].to_markdown())
+
+    # sqlite3 db 에 upsert
+    upsert_bok_base_rates(df_result)
 
     # CSV 파일로 저장
     df_result.to_csv(pjt_home_path + '/data/base_rate_data.csv', index=False, encoding='utf-8', sep='|')
