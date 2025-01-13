@@ -165,8 +165,8 @@ def preprocess_minutes_20200331(file_path):
     file = minutes_path + '/txt/' + 'KO_20200316_20200331.txt'
 
     filename = file_path[-24:-4]
-    mdate = datetime.strptime(file_path[-21:-13], '%Y%m%d') + timedelta(hours=10)
-    rdate = datetime.strptime(file_path[-12:-4], '%Y%m%d') + timedelta(hours=16)
+    mdate = dt.datetime.strptime(file_path[-21:-13], '%Y%m%d') + dt.timedelta(hours=10)
+    rdate = dt.datetime.strptime(file_path[-12:-4], '%Y%m%d') + dt.timedelta(hours=16)
 
     print('open file: {}'.format(file_path))
     minutes = open(file_path, encoding=u'utf-8').read()
@@ -289,7 +289,7 @@ def list_minute_files(path):
 def main():
 
     # step 1: preprocessing 처리 할 파일 목록 리스트 생성
-    minutes_path = './data/minutes'
+    minutes_path = f'{pjt_home_path}/data/minutes'
     files = list_minute_files(minutes_path)
     docs = []
 
