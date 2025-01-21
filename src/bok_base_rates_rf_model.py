@@ -3,6 +3,7 @@ import sys
 import site
 import logging
 import platform
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import RandomizedSearchCV
+from sklearn.metrics import log_loss, accuracy_score
 from sklearn.tree import plot_tree
 from sklearn.tree import export_graphviz
 
@@ -91,7 +93,7 @@ def main():
 
     # step 6. Random Forest Model Train
     # RF feature: tone_mkt, tone_lex, tone_mkt_MACD, tone_lex_MACD
-    # 학습기간은 최근 15 건 이전 기간으로 학습하고 테스트는 최근 15건 (금리인상사이크) 구간으로 모델 테스트
+    # 학습기간은 최근 15 건 이전 기간으로 학습하고 테스트는 최근 15건 (금리인상사이클) 구간으로 모델 테스트
     feature_list = ['d_MP', 'tone_mkt', 'tone_lex', 'tone_mkt_MACD', 'tone_lex_MACD']
     clf_model = RandomForestClassifier(n_estimators=5,
                                        min_samples_split=6,
@@ -173,20 +175,44 @@ def main():
                    }
 
     rf_base = RandomForestClassifier(n_estimators=5, n_jobs=-1)
-    rf_random = RandomizedSearchCV(estimator=rf_base,
+    rf_random_search = RandomizedSearchCV(estimator=rf_base,
                                    param_distributions=random_grid,
                                    n_iter=100,
                                    cv=5,
                                    verbose=2,
                                    random_state=35,
                                    n_jobs=-1)
-    rf_random.fit(X_train, y_train)
+    rf_random_search.fit(X_train, y_train)
 
 
     logger.debug(f'Tunging2 Random grid: {random_grid}')
-    logger.info(f'Tunging2 Best Parameters: {rf_random.best_params_}')
-    logger.info(f'Tunging2 Best Scores: {rf_random.best_score_}')
+    logger.info(f'Tunging2 Best Parameters: {rf_random_search.best_params_}')
+    logger.info(f'Tunging2 Best Scores: {rf_random_search.best_score_}')
     logger.info("Random Forest Model Tuning2 Done!!!")
+
+    # 예측 및 평가
+    rf_cls_best_model = rf_random_search.best_estimator_
+    probabilities = rf_cls_best_model.predict_proba(X_test)
+    y_pred = rf_cls_best_model.predict(X_test)
+
+    # 성능 평가
+    logloss = log_loss(y_test, probabilities)
+    accuracy = accuracy_score(y_test, y_pred)
+
+    logger.info(f"Log Loss: {logloss:.4f}")
+    logger.info(f"Accuracy: {accuracy:.4f}")
+
+    # 최근 데이터 적용 결과
+    X = pd.DataFrame(df_bok_data1[feature_list].iloc[-1]).transpose()
+    pred_result = rf_cls_best_model.predict(X)
+    pred_prob = rf_cls_best_model.predict_proba(X)
+    logger.info(f"prediction for latest {pred_result=} {pred_prob=}")
+
+    # 모델 저장
+    with open(f'{pjt_home_path}/models/best_model.pkl', 'wb') as mdl_file:
+        pickle.dump(rf_cls_best_model, mdl_file)
+
+    logger.info("Best model saved as 'best_model.pkl'")
 
     pass
 
