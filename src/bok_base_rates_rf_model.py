@@ -10,6 +10,10 @@ import sklearn
 # import matplotlib.pyplot as plt
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import RandomizedSearchCV
 from sklearn.tree import plot_tree
 from sklearn.tree import export_graphviz
 
@@ -127,6 +131,62 @@ def main():
     #           impurity=True,
     #           rounded=True
     #           )
+
+    # Random Forest Model Tuning1
+    logger.info("Random Forest Model Tuning1....")
+    rf = RandomForestClassifier(n_estimators=10, n_jobs=-1)
+    calibrated_forest = CalibratedClassifierCV(rf, cv=5)
+    param_grid = {'estimator__max_depth': [4, 8, 16],
+                  'estimator__n_estimators': [10, 20, 50, 100, 200],
+                  }
+    search = GridSearchCV(calibrated_forest, param_grid, cv=3, n_jobs=-1)
+    search.fit(df_bok_data1[['d_MP', 'tone_mkt', 'tone_lex', 'tone_mkt_MACD', 'tone_lex_MACD', ]], df_bok_data1['d_MP_p1'])
+
+    logger.debug(sorted(search.cv_results_.keys()))
+    logger.info(search.best_score_)
+    logger.info(search.best_params_)
+    logger.info(search.best_index_)
+    logger.debug(search.cv_results_)
+    logger.info("Random Forest Model Tuning1 Done!!!")
+
+    # Random Forest Model Tuning2
+    logger.info("Random Forest Model Tuning2....")
+    # Splitting the data into train-test split
+    X = df_bok_data1[['d_MP', 'tone_mkt', 'tone_lex', 'tone_mkt_MACD', 'tone_lex_MACD']]
+    Y = df_bok_data1['d_MP_p1']
+    X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.15, random_state=45)
+
+    # Hyperparamter tuning using RandomizedsearchCV
+    n_estimators = [5, 10, 20 ,50]      # number of trees in the random forest
+    max_features = ['auto', 'sqrt']     # number of feature in consideration at every split
+    max_depth = [int(x) for x in np.linspace(4, 24, num=2)]   # maximum number of levels allowed in each decision tree
+    min_samples_split = [2, 6, 10]      # minimum sample number to split a node
+    min_samples_leaf = [1, 3, 4]        # minimum sample number that can be stored in a leaf node
+    bootstrap = [True, False]           # method used to sample data points
+
+    random_grid = {'n_estimators': n_estimators,
+                   'max_features': max_features,
+                   'max_depth': max_depth,
+                   'min_samples_split': min_samples_split,
+                   'min_samples_leaf': min_samples_leaf,
+                   'bootstrap': bootstrap
+                   }
+
+    rf_base = RandomForestClassifier(n_estimators=5, n_jobs=-1)
+    rf_random = RandomizedSearchCV(estimator=rf_base,
+                                   param_distributions=random_grid,
+                                   n_iter=100,
+                                   cv=5,
+                                   verbose=2,
+                                   random_state=35,
+                                   n_jobs=-1)
+    rf_random.fit(X_train, y_train)
+
+
+    logger.debug(f'Tunging2 Random grid: {random_grid}')
+    logger.info(f'Tunging2 Best Parameters: {rf_random.best_params_}')
+    logger.info(f'Tunging2 Best Scores: {rf_random.best_score_}')
+    logger.info("Random Forest Model Tuning2 Done!!!")
 
     pass
 
