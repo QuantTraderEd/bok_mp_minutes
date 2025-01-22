@@ -44,6 +44,28 @@ bok_rate_cycle_v1 = """
 """
 
 
+def random_forest_model_tuning1(df_bok_data1: pd.DataFrame, feature_list: list):
+    # Random Forest Model Tuning1
+    logger.info("Random Forest Model Tuning1....")
+    rf = RandomForestClassifier(n_estimators=10, n_jobs=-1)
+    calibrated_forest = CalibratedClassifierCV(rf, cv=5)
+    param_grid = {'estimator__max_depth': [4, 8, 16],
+                  'estimator__n_estimators': [10, 20, 50, 100, 200],
+                  }
+    search = GridSearchCV(calibrated_forest, param_grid, cv=3, n_jobs=-1)
+    search.fit(df_bok_data1[feature_list], df_bok_data1['d_MP_p1'])
+
+    logger.debug(sorted(search.cv_results_.keys()))
+    logger.info(search.best_score_)
+    logger.info(search.best_params_)
+    logger.info(search.best_index_)
+    logger.debug(search.cv_results_)
+    logger.info("Random Forest Model Tuning1 Done!!!")
+
+    best_model = search.best_estimator_
+
+    return best_model
+
 
 def main():
 
@@ -140,23 +162,6 @@ def main():
     #           impurity=True,
     #           rounded=True
     #           )
-
-    # Random Forest Model Tuning1
-    logger.info("Random Forest Model Tuning1....")
-    rf = RandomForestClassifier(n_estimators=10, n_jobs=-1)
-    calibrated_forest = CalibratedClassifierCV(rf, cv=5)
-    param_grid = {'estimator__max_depth': [4, 8, 16],
-                  'estimator__n_estimators': [10, 20, 50, 100, 200],
-                  }
-    search = GridSearchCV(calibrated_forest, param_grid, cv=3, n_jobs=-1)
-    search.fit(df_bok_data1[feature_list], df_bok_data1['d_MP_p1'])
-
-    logger.debug(sorted(search.cv_results_.keys()))
-    logger.info(search.best_score_)
-    logger.info(search.best_params_)
-    logger.info(search.best_index_)
-    logger.debug(search.cv_results_)
-    logger.info("Random Forest Model Tuning1 Done!!!")
 
     # Random Forest Model Tuning2
     logger.info("Random Forest Model Tuning2....")
