@@ -37,6 +37,13 @@ logger.info(f"platform system => {platform.system()}")
 logger.info(f"pandas version => {pd.__version__}")
 logger.info(f"scikit-learn version => {sklearn.__version__}")
 
+bok_rate_cycle_v1 = """
+상승기_시작  상승기_종료  하락기_시작  하락기_종료
+2000-01-06  2001-01-11  2001-02-08  2005-09-08
+2005-10-11  2008-09-11  2008-10-09  2010-06-10
+"""
+
+
 
 def main():
 
@@ -142,7 +149,7 @@ def main():
                   'estimator__n_estimators': [10, 20, 50, 100, 200],
                   }
     search = GridSearchCV(calibrated_forest, param_grid, cv=3, n_jobs=-1)
-    search.fit(df_bok_data1[['d_MP', 'tone_mkt', 'tone_lex', 'tone_mkt_MACD', 'tone_lex_MACD', ]], df_bok_data1['d_MP_p1'])
+    search.fit(df_bok_data1[feature_list], df_bok_data1['d_MP_p1'])
 
     logger.debug(sorted(search.cv_results_.keys()))
     logger.info(search.best_score_)
@@ -154,7 +161,7 @@ def main():
     # Random Forest Model Tuning2
     logger.info("Random Forest Model Tuning2....")
     # Splitting the data into train-test split
-    X = df_bok_data1[['d_MP', 'tone_mkt', 'tone_lex', 'tone_mkt_MACD', 'tone_lex_MACD']]
+    X = df_bok_data1[feature_list]
     Y = df_bok_data1['d_MP_p1']
     X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.15, random_state=45)
 
@@ -194,15 +201,33 @@ def main():
     rf_cls_best_model = rf_random_search.best_estimator_
     probabilities = rf_cls_best_model.predict_proba(X_test)
     y_pred = rf_cls_best_model.predict(X_test)
+    df_act_prd = pd.DataFrame([y_test.values, y_pred]).transpose()
+    df_act_prd.index = y_test.index
+    df_act_prd.columns = ['actual', 'predict']
+    logger.info(f"test data set actual vs predict =>\n{df_act_prd}")
 
     # 성능 평가
+    score = rf_cls_best_model.score(X_test, y_test)
     logloss = log_loss(y_test, probabilities)
     accuracy = accuracy_score(y_test, y_pred)
 
+    logger.info(f"Score: {score:.4f}")
     logger.info(f"Log Loss: {logloss:.4f}")
     logger.info(f"Accuracy: {accuracy:.4f}")
 
-    # 최근 데이터 적용 결과
+    # 최근 데이터 적용 결과1 (최근 16개 적용 테스트)
+    X_test_latest_16th = df_bok_data1[feature_list].iloc[-16:]
+    y_test_latest_16th = df_bok_data1['d_MP_p1'].iloc[-16:]
+    score = rf_cls_best_model.score(X_test_latest_16th, y_test_latest_16th)
+
+    y_pred = rf_cls_best_model.predict(X_test_latest_16th)
+    df_act_prd = pd.DataFrame([y_test_latest_16th.values, y_pred]).transpose()
+    df_act_prd.index = y_test_latest_16th.index
+    df_act_prd.columns = ['actual', 'predict']
+    logger.info(f"test latest 16th data set actual vs predict =>\n{df_act_prd}")
+    logger.info(f"Score for latest 16th: {score:.4f}")
+
+    # 최근 데이터 적용 결과2
     X = pd.DataFrame(df_bok_data1[feature_list].iloc[-1]).transpose()
     pred_result = rf_cls_best_model.predict(X)
     pred_prob = rf_cls_best_model.predict_proba(X)
