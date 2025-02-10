@@ -58,12 +58,12 @@ def get_minutes_file(page_addr: str, mdate: dt.datetime, rdate: dt.datetime):
 
 def get_minutes_list(from_date: str ='20171010'):
     """
-    등록일(radte) 과  from_date 보다 미래인 날만 의사록 다운로드 함수.
+    등록일(radte) 과  from_date 보다 미래인 날만 의사록 데이터 링크, mdate, rdate records list 반환
     rss html의 description 부분에 공란으로 되어 있어 기간별 구분 (rdate > 17 Sep 2019).
     # Because this is for the recent minutes, changed the address of the list to that of the rss feed of the BOK minutes.
 
     :param str from_date: 의사록 수집 시작일자 (YYYYMMDD)
-    :return:
+    :return list: [guid, mdate, rdate]
     """
 
     from_date = dt.datetime.strptime(from_date, '%Y%m%d')
@@ -75,6 +75,8 @@ def get_minutes_list(from_date: str ='20171010'):
 
     soup = BeautifulSoup(page.content, 'html.parser')
     brd_list = soup.find_all('item')
+
+    minutes_list = list()
 
     for post in brd_list:
         pubdate = post.find('pubdate').get_text().strip()
@@ -94,7 +96,7 @@ def get_minutes_list(from_date: str ='20171010'):
             if mdate < from_date:
                 break
 
-            get_minutes_file(guid, mdate, rdate)
+            minutes_list.append([guid, mdate, rdate])
         else:
             mdate = title[title.find(')(') + 2:-1]
             if mdate[-1] == '.':
@@ -103,7 +105,9 @@ def get_minutes_list(from_date: str ='20171010'):
             if mdate < from_date:
                 break
 
-            get_minutes_file(guid, mdate, rdate)
+            minutes_list.append([guid, mdate, rdate])
+
+        return minutes_list
 
 def get_minutes_list_old():
     target_csv_file = 'minutes_link.csv'
@@ -121,7 +125,7 @@ def get_minutes_list_old():
         # step3. get_minutes_file(page_url, mdate, rate) 함수 실행
         get_minutes_file(page_url, mdate, rdate)
 
-def get_minutes(target_date: str ='20171107'):
+def get_minutes_target_date(target_date: str = '20171107'):
     """
     등록일(radte) 과  target_date 가 같은날만 의사록 다운로드 함수.
     rss html의 description 부분에 공란으로 되어 있어 기간별 구분 (rdate > 17 Sep 2019).
@@ -155,6 +159,20 @@ def get_minutes(target_date: str ='20171107'):
                 mdate = mdate[:-1]
             mdate = dt.datetime.strptime(mdate, '%Y.%m.%d')
             get_minutes_file(guid, mdate, rdate)
+
+def get_minutes_data_from_list(minutes_list: list):
+    """
+    [guid, mdate, rdate] record 의 리스트를 입력 받아 해당 의사록 데이터 파일(hwp) 다운로드
+    :param minutes_list:
+    :return:
+    """
+
+    for item in minutes_list:
+        guid = item[0]
+        mdate = item[1]
+        rdate = item[2]
+
+        get_minutes_file(guid, mdate, rdate)
 
 
 def convert_hwp_to_txt(from_date: str):
@@ -192,9 +210,28 @@ def main(from_date: str):
 
     """
     logger.info(f"from_date => {from_date}")
-    get_minutes_list(from_date)
+
+    # tone 분석결과 데이터 로딩
+    minutes_path = f'{pjt_home_path}/data/minutes/'
+    df_tones_path = os.path.join(minutes_path, 'minutes_tones.csv')
+    df_result = pd.read_csv(df_tones_path, encoding='utf-8', sep='|')
+    last_result_mdate = df_result['mdate'].iloc[-1]
+    last_result_mdate = dt.datetime.strptime(last_result_mdate[:10], "%Y-%m-%d")
+
+    # 최신 금통위 의사록 목록
+    minutes_list = get_minutes_list(from_date)
+    last_mdate = minutes_list[0][1]
+    logger.info(f"last_mdate-> {last_mdate.strftime('%Y-%m-%d')} last_result_mdate-> {last_result_mdate.strftime('%Y-%m-%d')}")
+    # tone분석 일자와 최신 금통위 의사록 일자 비교 하여 의사록 데이터 다운로드
+    if last_mdate > last_result_mdate:
+        logger.info(f"last_mdate > last_result_mdate ==> download data & convert to txt...")
+        get_minutes_data_from_list(minutes_list)
+        convert_hwp_to_txt(from_date)
+        logger.info("done!!")
+    else:
+        logger.info(f"last_mdate <= last_result_mdate ==> passing to download data & convert to txt!!")
     # get_minutes_list_old()
-    convert_hwp_to_txt(from_date)
+    # convert_hwp_to_txt(from_date)
 
 
 if __name__ == "__main__":
