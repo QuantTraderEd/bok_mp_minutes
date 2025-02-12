@@ -321,6 +321,11 @@ def main():
     df.to_csv(df_minutes_path, encoding='utf-8', index=False, sep='|')
     df.to_excel(df_minutes_path_excel, index=False)
 
+    if len(df) == 0:
+        logger.warning("there is no preprocessed data.. it may be no latest minutes...")
+
+    logger.info("preprocess done!!")
+
 
 if __name__ == "__main__":
     import argparse
