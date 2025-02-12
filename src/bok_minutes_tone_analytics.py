@@ -1,5 +1,6 @@
 import os
 import sys
+import site
 import logging
 import platform
 import datetime as dt
@@ -12,6 +13,10 @@ src_path = os.path.dirname(__file__)
 pjt_home_path = os.path.join(src_path, os.pardir)
 pjt_home_path = os.path.abspath(pjt_home_path)
 
+site.addsitedir(pjt_home_path)
+
+from dao.upsert_bok_minute_sentence_tone_analytic import  upsert_bok_minute_sentence_tone_analytic_result
+from dao.upsert_bok_minute_daily_tone_analytic import upsert_bok_minute_daily_tone_analytic_result
 
 logger = logging.getLogger(__file__)
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(filename)s %(lineno)d: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -74,22 +79,41 @@ def main():
         # msg = f"{mdate} {rdate} {sentence} {tone_mkt} {tone_lex}"
         # logger.debug(msg)
 
-    logger.info("sentence sentimental analysis done!!")
+    if len(scores) > 0:
+        logger.info("sentence sentimental analysis done!!")
+    else:
+        logger.warning("there is no score data... it may be no text & sentence data of minutes.csv... ")
 
     # step 3. 분석결과 파일 저장
-    logger.info("grouping analytics result by daily and save analytics result...")
-    df_score = pd.DataFrame(scores, columns=['filename', 'mdate', 'rdate', 'section', 'sid', 'sentence', 'tone_mkt', 'tone_lex'])
+    # 기존 tone 분석 결과 로딩
+    df_result_old = pd.read_csv(df_tones_path, encoding='utf-8', sep='|')
 
-    df_score.to_csv(minutes_path + 'minutes_score.csv',encoding='utf-8', index=False, sep='|')
+    if len(scores) > 0:
+        # 문장별 tone 분석 결과 일별 결과 그룹핑
+        logger.info("grouping analytics result by daily and save analytics result...")
+        df_score = pd.DataFrame(scores, columns=['filename', 'mdate', 'rdate', 'section', 'sid', 'sentence', 'tone_mkt', 'tone_lex'])
+        df_score.to_csv(minutes_path + 'minutes_score.csv',encoding='utf-8', index=False, sep='|')
+        row_cnt = upsert_bok_minute_sentence_tone_analytic_result(df_score)
+        logger.info("save sentence tone data!!")
 
-    key_cols = ['mdate']
-    tone_cols = ['tone_mkt', 'tone_lex']
-    df_result = df_score.groupby(key_cols)[tone_cols].agg(lambda x: calc_polarity(x)).reset_index()
-    df_result.to_csv(df_tones_path, encoding='utf-8', index=False, sep='|')
+        key_cols = ['mdate']
+        tone_cols = ['tone_mkt', 'tone_lex']
+        df_result = df_score.groupby(key_cols)[tone_cols].agg(lambda x: calc_polarity(x)).reset_index()
+
+        # 기존에 tone 분석 결과 와 최신 일자 결과 append, drop_dup, sorting 수행
+        df_result = pd.concat([df_result_old, df_result], axis=0, ignore_index=True)
+        df_result = df_result.drop_duplicates(subset=['mdate'], keep='first')
+        df_result = df_result.sort_values(by='mdate')
+    else:
+        df_result = df_result_old
+
     logger.info(f"df_result=> \n{df_result.iloc[-12:].to_markdown()}")
-    logger.info("sentence sentimental analysis done!!")
 
-    logger.info("END!!")
+    df_result.to_csv(df_tones_path, encoding='utf-8', index=False, sep='|')
+    row_cnt = upsert_bok_minute_daily_tone_analytic_result(df_result)
+    logger.info("save daily tone date!!")
+
+    logger.info("Done!!")
 
 
 if __name__ == "__main__":
