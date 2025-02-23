@@ -28,6 +28,18 @@ jobs:
     - name: Run Main Scripts
       run: |
         ./start_minutes.sh
-    - name: Send results
+    - name: Send Results
       run: |
         python src/bok_minutes_send_analytics.py ${{secrets.NVR_MAIL_PWD}}
+    - name: Check For Changes
+      id: changes
+      run: |
+        git diff --exit-code || echo "::set-output name=changes::true"
+    - name: Commits & Push
+      if: steps.changes.outputs.changes == 'true'
+      run: |
+        git config --local user.email "hyojkim79@gmail.com"
+        git config --local user.name "QuantTraderEd"
+        git add .
+        git commit -m "[Auto-Commit] daily analysis"
+        git push -u origin main
