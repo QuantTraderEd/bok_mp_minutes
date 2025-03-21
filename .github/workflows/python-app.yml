@@ -1,14 +1,14 @@
 name: bok minutes analytics
 
-on:
-  schedule:
+#on:
+  #schedule:
     # 실제 스케쥴 작업이 시작될 cron을 등록.
     # 크론은 https://crontab.guru/ 여기서 확인
     # 이 크론은 월-금 10시 (한국시간 오후 7시)에 실행됩니다.
-    - cron: "00 10 * * 1-5"
+    #- cron: "00 10 * * 1-5"
 
-#on:
-#  workflow_dispatch:  # 수동으로 실행하는 이벤트
+on:
+  workflow_dispatch:  # 수동으로 실행하는 이벤트
 
 jobs:
   build:
